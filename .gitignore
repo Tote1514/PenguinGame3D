@@ -1,32 +1,39 @@
-# Prerequisites
-*.d
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Bb]in/
+[Oo]bj/
 
-# Precompiled Headers
-*.gch
-*.pch
+# VS Code folders (optional, if you use it)
+.vscode/
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Auto-generated files
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+*.ncb
+*.sdf
+*.cachefile
+*.dbmdl
+*.VC.db
+*.opendb
+*.pidb
 
-# Fortran module files
-*.mod
-*.smod
+# Visual Studio folder
+.vs/
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.scc

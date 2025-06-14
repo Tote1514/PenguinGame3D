@@ -17,8 +17,10 @@ private:
 	void desenhaPatas() const;
 	void desenhaAsas() const;
 	void desenhaCabeca() const;
-	
+
+protected:
 	float x, y, z;
-	float anguloY{ 0.f };
+	float anguloY{ 90.f };
+	bool filhote{ false };
 };
 

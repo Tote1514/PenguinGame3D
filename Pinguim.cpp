@@ -14,7 +14,10 @@ void Pinguim::desenha() const
 {
 	glPushMatrix();
 		glTranslatef(x, y, z);
-		glRotatef(anguloY, 0.0f, 1.0f, 0.0f);
+		glRotatef(anguloY, 0.0f, 1.0f, 0.0f);	
+		if (filhote)
+			glScalef(0.5f, 0.5f, 0.5f);
+
 		desenhaCorpo();
 		desenhaOlhos();
 		desenhaBico();

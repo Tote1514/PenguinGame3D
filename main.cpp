@@ -3,6 +3,7 @@
 
 #include "Pinguim.h"
 #include "Cor.h"
+#include "Filhote.h"
 
 void desenha();
 void init();
@@ -68,7 +69,8 @@ void init()
 	glDisable(GL_COLOR_MATERIAL);
 }
 
-Pinguim pinguim(0.0f, 0.0f, 0.0f);
+Pinguim pinguim(-5.0f, 0.0f, 0.0f);
+Filhote filhote(-10.f, 0.0f, 0.0f);
 
 void desenha()
 {
@@ -78,7 +80,7 @@ void desenha()
 
 	// Plano de gelo
 	glPushMatrix();
-	glTranslatef(-12, -0.8, 0); // um pouco abaixo do pinguim
+	glTranslatef(-12, -0.8, 0);
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, new float[4] {0.8f, 0.95f, 1.0f, 1.0f}); // azul gelo claro
 	glMaterialfv(GL_FRONT, GL_SPECULAR, new float[4] {1.0f, 1.0f, 1.0f, 1.0f});
 	glMaterialf(GL_FRONT, GL_SHININESS, 50.0f);
@@ -98,6 +100,9 @@ void desenha()
 
 
 	pinguim.desenha();
+	filhote.desenha();
+
+
 	glutSwapBuffers();
 }
 

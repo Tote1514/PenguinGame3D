@@ -1,6 +1,7 @@
 #include "Peixe.h"
 
 #include "Cor.h"
+#include "Peixe.h"
 
 #include <GL/glut.h>
 

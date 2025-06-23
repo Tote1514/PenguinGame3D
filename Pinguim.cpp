@@ -15,7 +15,8 @@ void Pinguim::desenha() const
 {
 	glPushMatrix();
 		glTranslatef(x, y, z);
-		glRotatef(anguloY, 0.0f, 1.0f, 0.0f);	
+		glRotatef(anguloY, 0.0f, 1.0f, 0.0f);
+		glRotatef(anguloX, 1, 0, 0);
 		if (filhote)
 			glScalef(0.5f, 0.5f, 0.5f);
 
@@ -83,6 +84,13 @@ void Pinguim::desenhaBico() const
 		glScalef(0.7f, 0.7f, 1.f);
 		glutSolidCone(0.2f, 0.4f, 20, 20);
 	glPopMatrix();
+
+	if (!temPeixe) 
+		return;
+
+	Peixe peixeNoBico(0.0f, 1.0f, 0.8f, 180);
+	peixeNoBico.desenha();
+
 }
 
 void Pinguim::desenhaPatas() const
@@ -154,8 +162,20 @@ void Pinguim::orientarPara(float dx, float dz)
 	anguloY = atan2(dx, -dz) * 180.0f / 3.14159f;
 }
 
-void Pinguim::mover(float dx, float dz)
+void Pinguim::mover(float dx, float dz, float boundary)
 {
 	x += dx;
 	z += dz;
+
+
+	if (x > boundary)
+	{
+		y = -0.8;
+		anguloX = 90;
+	}
+	else if (x <= boundary)
+	{
+		y = 0.0;
+		anguloX = 0;
+	}
 }

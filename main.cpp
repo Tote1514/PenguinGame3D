@@ -1,9 +1,11 @@
 #include <GL/glut.h>
 #include <iostream>
+#include <vector>
 
 #include "Pinguim.h"
 #include "Cor.h"
 #include "Filhote.h"
+#include "Peixe.h"
 
 void desenha();
 void init();
@@ -11,9 +13,12 @@ void reshape(int w, int h);
 void posicaoObservador(void);
 void teclasEspecias(int tecla, int x, int y);
 void teclas(unsigned char key, int x, int y);
+void doFrame(int value);
 
 GLfloat angle, fAspect, rotX, rotY;
 GLdouble obsX, obsY, obsZ;
+
+float alturaDoChao{ -0.8 };
 
 
 int main(int argc, char** argv) {
@@ -27,6 +32,7 @@ int main(int argc, char** argv) {
 	glutReshapeFunc(reshape);
 	glutSpecialFunc(teclasEspecias);
 	glutKeyboardFunc(teclas);
+	glutTimerFunc(100, doFrame, 0); // chama doFrame a cada 100 ms
 	
 	glutMainLoop();
 	
@@ -72,6 +78,15 @@ void init()
 Pinguim pinguim(-5.0f, 0.0f, 0.0f);
 Filhote filhote(-10.f, 0.0f, 0.0f);
 
+std::vector<Peixe> cardume = {
+	Peixe(1.0f, alturaDoChao, -5.0f, -90),
+	Peixe(4.0f, alturaDoChao, 0.0f, 90),
+	Peixe(8.0f, alturaDoChao, 5.0f, 90),
+	Peixe(12.0f, alturaDoChao, 10.0f, 90),
+	Peixe(10.0f, alturaDoChao, -9.0f, 90)
+};
+
+
 void desenha()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -80,7 +95,7 @@ void desenha()
 
 	// Plano de gelo
 	glPushMatrix();
-	glTranslatef(-12, -0.8, 0);
+	glTranslatef(-12, alturaDoChao, 0);
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, new float[4] {0.8f, 0.95f, 1.0f, 1.0f}); // azul gelo claro
 	glMaterialfv(GL_FRONT, GL_SPECULAR, new float[4] {1.0f, 1.0f, 1.0f, 1.0f});
 	glMaterialf(GL_FRONT, GL_SHININESS, 50.0f);
@@ -101,6 +116,9 @@ void desenha()
 
 	pinguim.desenha();
 	filhote.desenha();
+
+	for (auto &peixe : cardume)
+		peixe.desenha();
 
 
 	glutSwapBuffers();
@@ -170,4 +188,14 @@ void teclas(unsigned char key, int x, int y)
 
 	posicaoObservador();
 	glutPostRedisplay();
+}
+
+void doFrame(int value)
+{
+	for (auto &peixe : cardume)
+		peixe.mover(0.1f, 10.0);
+
+
+	glutPostRedisplay();
+	glutTimerFunc(1000 / 60, doFrame, 0);
 }

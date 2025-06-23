@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "Cor.h"
+#include "Peixe.h"
 
 Pinguim::Pinguim(float x, float y, float z)
 	: x(x), y(y), z(z)

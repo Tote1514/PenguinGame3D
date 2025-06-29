@@ -6,6 +6,9 @@ class Pinguim
 {
 public:
 	Pinguim(float x, float y, float z);
+	float getX();
+	float getY();
+	float getZ();
 	void desenha() const;
 	void andarFrente(float distancia);
 	void andarLateral(float distancia);
@@ -13,7 +16,7 @@ public:
 	void orientarPara(float dx, float dz);
 	void mover(float dx, float dz, float boundary = 0.5);
 
-	void verificarSePegouPeixe(Peixe& peixe);
+	void verificarSePegouPeixe(Peixe &peixe);
 	bool temPeixePegado() const;
 
 private:
@@ -26,10 +29,9 @@ private:
 
 protected:
 	float x, y, z;
-	float anguloY{ 90.f };
-	float anguloX{ 0.f };
-	bool filhote{ false };
+	float anguloY{90.f};
+	float anguloX{0.f};
+	bool filhote{false};
 
-	bool temPeixe{ false };
+	bool temPeixe{false};
 };
-

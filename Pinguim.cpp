@@ -8,29 +8,44 @@
 #include "Peixe.h"
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846 
+#define M_PI 3.14159265358979323846
 #endif
 
 Pinguim::Pinguim(float x, float y, float z)
-	: x(x), y(y), z(z)
+		: x(x), y(y), z(z)
 {
+}
+
+float Pinguim::getX()
+{
+	return x;
+}
+
+float Pinguim::getY()
+{
+	return y;
+}
+
+float Pinguim::getZ()
+{
+	return z;
 }
 
 void Pinguim::desenha() const
 {
 	glPushMatrix();
-		glTranslatef(x, y, z);
-		glRotatef(anguloY, 0.0f, 1.0f, 0.0f);
-		glRotatef(anguloX, 1, 0, 0);
-		if (filhote)
-			glScalef(0.5f, 0.5f, 0.5f);
+	glTranslatef(x, y, z);
+	glRotatef(anguloY, 0.0f, 1.0f, 0.0f);
+	glRotatef(anguloX, 1, 0, 0);
+	if (filhote)
+		glScalef(0.5f, 0.5f, 0.5f);
 
-		desenhaCorpo();
-		desenhaOlhos();
-		desenhaBico();
-		desenhaPatas();
-		desenhaAsas();
-		desenhaCabeca();
+	desenhaCorpo();
+	desenhaOlhos();
+	desenhaBico();
+	desenhaPatas();
+	desenhaAsas();
+	desenhaCabeca();
 	glPopMatrix();
 }
 
@@ -43,8 +58,8 @@ void Pinguim::desenhaCorpo() const
 	glMaterialfv(GL_FRONT, GL_SHININESS, corPreta[2]);
 
 	glPushMatrix();
-		glScalef(0.6f, 0.7f, 0.6f);
-		glutSolidSphere(1.0f, 20, 20);
+	glScalef(0.6f, 0.7f, 0.6f);
+	glutSolidSphere(1.0f, 20, 20);
 	glPopMatrix();
 
 	auto corBranca = Cor::branco();
@@ -53,9 +68,9 @@ void Pinguim::desenhaCorpo() const
 	glMaterialfv(GL_FRONT, GL_SHININESS, corBranca[2]);
 
 	glPushMatrix();
-		glTranslatef(0.0f, 0.f, 0.5f);
-		glScalef(0.3f, 0.4f, 0.1f);
-		glutSolidSphere(1.0f, 20, 20);
+	glTranslatef(0.0f, 0.f, 0.5f);
+	glScalef(0.3f, 0.4f, 0.1f);
+	glutSolidSphere(1.0f, 20, 20);
 	glPopMatrix();
 }
 
@@ -67,13 +82,13 @@ void Pinguim::desenhaOlhos() const
 	glMaterialfv(GL_FRONT, GL_SHININESS, corBranca[2]);
 
 	glPushMatrix();
-		glTranslatef(-0.2f, 1.2f, 0.2f);
-		glutSolidSphere(0.1f, 20, 20);
+	glTranslatef(-0.2f, 1.2f, 0.2f);
+	glutSolidSphere(0.1f, 20, 20);
 	glPopMatrix();
 
 	glPushMatrix();
-		glTranslatef(0.2f, 1.2f, 0.2f);
-		glutSolidSphere(0.1f, 20, 20);
+	glTranslatef(0.2f, 1.2f, 0.2f);
+	glutSolidSphere(0.1f, 20, 20);
 	glPopMatrix();
 }
 
@@ -85,17 +100,16 @@ void Pinguim::desenhaBico() const
 	glMaterialfv(GL_FRONT, GL_SHININESS, corLaranja[2]);
 
 	glPushMatrix();
-		glTranslatef(0.0f, 1.0f, 0.3f);
-		glScalef(0.7f, 0.7f, 1.f);
-		glutSolidCone(0.2f, 0.4f, 20, 20);
+	glTranslatef(0.0f, 1.0f, 0.3f);
+	glScalef(0.7f, 0.7f, 1.f);
+	glutSolidCone(0.2f, 0.4f, 20, 20);
 	glPopMatrix();
 
-	if (!temPeixe) 
+	if (!temPeixe)
 		return;
 
 	Peixe peixeNoBico(0.0f, 1.0f, 0.8f, 180);
 	peixeNoBico.desenha();
-
 }
 
 void Pinguim::desenhaPatas() const
@@ -106,15 +120,15 @@ void Pinguim::desenhaPatas() const
 	glMaterialfv(GL_FRONT, GL_SHININESS, corLaranja[2]);
 
 	glPushMatrix();
-		glTranslatef(-0.3f, -0.7f, 0.0f);
-		glScalef(0.5f, 0.2f, 0.5f);
-		glutSolidSphere(0.5f, 20, 20);
+	glTranslatef(-0.3f, -0.7f, 0.0f);
+	glScalef(0.5f, 0.2f, 0.5f);
+	glutSolidSphere(0.5f, 20, 20);
 	glPopMatrix();
 
 	glPushMatrix();
-		glTranslatef(0.3f, -0.7f, 0.0f);
-		glScalef(0.5f, 0.2f, 0.5f);
-		glutSolidSphere(0.5f, 20, 20);
+	glTranslatef(0.3f, -0.7f, 0.0f);
+	glScalef(0.5f, 0.2f, 0.5f);
+	glutSolidSphere(0.5f, 20, 20);
 	glPopMatrix();
 }
 
@@ -125,14 +139,14 @@ void Pinguim::desenhaAsas() const
 	glMaterialfv(GL_FRONT, GL_SPECULAR, corPreta[1]);
 	glMaterialfv(GL_FRONT, GL_SHININESS, corPreta[2]);
 	glPushMatrix();
-		glTranslatef(-0.6f, 0.0f, 0.0f);
-		glScalef(0.2f, 0.5f, 0.2f);
-		glutSolidSphere(1.0f, 20, 20);
+	glTranslatef(-0.6f, 0.0f, 0.0f);
+	glScalef(0.2f, 0.5f, 0.2f);
+	glutSolidSphere(1.0f, 20, 20);
 	glPopMatrix();
 	glPushMatrix();
-		glTranslatef(0.6f, 0.0f, 0.0f);
-		glScalef(0.2f, 0.5f, 0.2f);
-		glutSolidSphere(1.0f, 20, 20);
+	glTranslatef(0.6f, 0.0f, 0.0f);
+	glScalef(0.2f, 0.5f, 0.2f);
+	glutSolidSphere(1.0f, 20, 20);
 	glPopMatrix();
 }
 
@@ -144,8 +158,8 @@ void Pinguim::desenhaCabeca() const
 	glMaterialfv(GL_FRONT, GL_SHININESS, corPreto[2]);
 
 	glPushMatrix();
-		glTranslatef(0.0f, 1.f, 0.0f);
-		glutSolidSphere(0.4f, 20, 20);
+	glTranslatef(0.0f, 1.f, 0.0f);
+	glutSolidSphere(0.4f, 20, 20);
 	glPopMatrix();
 }
 
@@ -172,7 +186,6 @@ void Pinguim::mover(float dx, float dz, float boundary)
 	x += dx;
 	z += dz;
 
-
 	if (x > boundary)
 	{
 		y = -0.8;
@@ -187,32 +200,30 @@ void Pinguim::mover(float dx, float dz, float boundary)
 
 #include <iostream>
 
-void Pinguim::verificarSePegouPeixe(Peixe& peixe)
+void Pinguim::verificarSePegouPeixe(Peixe &peixe)
 {
-	// Ajusta a posição da cabeça com base no ângulo
-	float deslocamento = 0.5f; // distância da cabeça em relação ao centro do corpo
+	// Ajusta a posiï¿½ï¿½o da cabeï¿½a com base no ï¿½ngulo
+	float deslocamento = 0.5f; // distï¿½ncia da cabeï¿½a em relaï¿½ï¿½o ao centro do corpo
 
 	float rad = anguloY * M_PI / 180.0f; // converte para radiano
 
-
 	float posicaoXCabeca = x + deslocamento * sin(rad);
-	float posicaoZCabeca = z - deslocamento * cos(rad); // negativo porque o eixo Z cresce pra "trás"
-	float posicaoYCabeca = y + 1.0f; // assumindo que a cabeça fica acima do corpo
+	float posicaoZCabeca = z - deslocamento * cos(rad); // negativo porque o eixo Z cresce pra "trï¿½s"
+	float posicaoYCabeca = y + 1.0f;										// assumindo que a cabeï¿½a fica acima do corpo
 
 	// Debug
 	std::cout << "anguloY: " << anguloY << std::endl;
 	std::cout << "posicaoXCabeca: " << posicaoXCabeca << ", posicaoZCabeca: " << posicaoZCabeca << std::endl;
 
-	// Dimensões da cabeça
+	// Dimensï¿½es da cabeï¿½a
 	float larguraCabeca = 0.4f;
 	float profundidadeCabeca = 0.4f;
 	float alturaCabeca = 0.4f;
 
 	// Corrigindo a ordem: altura, largura, profundidade, centroX, centroY, centroZ
 	Area areaCabeca(
-		alturaCabeca, larguraCabeca, profundidadeCabeca,
-		posicaoXCabeca, posicaoYCabeca, posicaoZCabeca
-	);
+			alturaCabeca, larguraCabeca, profundidadeCabeca,
+			posicaoXCabeca, posicaoYCabeca, posicaoZCabeca);
 
 	if (areaCabeca.colideCom(peixe.getArea()))
 	{
@@ -220,7 +231,6 @@ void Pinguim::verificarSePegouPeixe(Peixe& peixe)
 		std::cout << "Pinguim pegou o peixe!" << std::endl;
 	}
 }
-
 
 bool Pinguim::temPeixePegado() const
 {

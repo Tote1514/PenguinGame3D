@@ -1,5 +1,6 @@
 #include "Peixe.h"
 
+#include "Area.h"
 #include "Cor.h"
 #include "Peixe.h"
 
@@ -27,6 +28,15 @@ void Peixe::mover(float delta, float boundary)
 		z = -boundary;
 		anguloY = -anguloY;
 	}
+}
+
+Area Peixe::getArea() const
+{
+	float largura = 0.5f; 
+	float altura = 0.5f; 
+	float profundidade = 0.5f; 
+
+	return Area(x, y, z, largura, altura, profundidade);
 }
 
 void Peixe::desenha() const

@@ -79,11 +79,11 @@ Pinguim pinguim(-5.0f, 0.0f, 0.0f);
 Filhote filhote(-10.f, 0.0f, 0.0f);
 
 std::vector<Peixe> cardume = {
-	Peixe(1.0f, alturaDoChao, -5.0f, -90),
+	//Peixe(1.0f, alturaDoChao, -5.0f, -90),
 	Peixe(4.0f, alturaDoChao, 0.0f, 90),
-	Peixe(8.0f, alturaDoChao, 5.0f, 90),
+	/*Peixe(8.0f, alturaDoChao, 5.0f, 90),
 	Peixe(12.0f, alturaDoChao, 10.0f, 90),
-	Peixe(10.0f, alturaDoChao, -9.0f, 90)
+	Peixe(10.0f, alturaDoChao, -9.0f, 90)*/
 };
 
 
@@ -192,8 +192,14 @@ void teclas(unsigned char key, int x, int y)
 
 void doFrame(int value)
 {
-	for (auto &peixe : cardume)
+	for (auto& peixe : cardume)
+	{
 		peixe.mover(0.1f, 10.0);
+
+
+		if (!pinguim.temPeixePegado())
+			pinguim.verificarSePegouPeixe(peixe);
+	}
 
 
 	glutPostRedisplay();

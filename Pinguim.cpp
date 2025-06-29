@@ -3,8 +3,13 @@
 #include <GL/glut.h>
 #include <math.h>
 
+#include "Area.h"
 #include "Cor.h"
 #include "Peixe.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846 
+#endif
 
 Pinguim::Pinguim(float x, float y, float z)
 	: x(x), y(y), z(z)
@@ -178,4 +183,46 @@ void Pinguim::mover(float dx, float dz, float boundary)
 		y = 0.0;
 		anguloX = 0;
 	}
+}
+
+#include <iostream>
+
+void Pinguim::verificarSePegouPeixe(Peixe& peixe)
+{
+	// Ajusta a posição da cabeça com base no ângulo
+	float deslocamento = 0.5f; // distância da cabeça em relação ao centro do corpo
+
+	float rad = anguloY * M_PI / 180.0f; // converte para radiano
+
+
+	float posicaoXCabeca = x + deslocamento * sin(rad);
+	float posicaoZCabeca = z - deslocamento * cos(rad); // negativo porque o eixo Z cresce pra "trás"
+	float posicaoYCabeca = y + 1.0f; // assumindo que a cabeça fica acima do corpo
+
+	// Debug
+	std::cout << "anguloY: " << anguloY << std::endl;
+	std::cout << "posicaoXCabeca: " << posicaoXCabeca << ", posicaoZCabeca: " << posicaoZCabeca << std::endl;
+
+	// Dimensões da cabeça
+	float larguraCabeca = 0.4f;
+	float profundidadeCabeca = 0.4f;
+	float alturaCabeca = 0.4f;
+
+	// Corrigindo a ordem: altura, largura, profundidade, centroX, centroY, centroZ
+	Area areaCabeca(
+		alturaCabeca, larguraCabeca, profundidadeCabeca,
+		posicaoXCabeca, posicaoYCabeca, posicaoZCabeca
+	);
+
+	if (areaCabeca.colideCom(peixe.getArea()))
+	{
+		temPeixe = true;
+		std::cout << "Pinguim pegou o peixe!" << std::endl;
+	}
+}
+
+
+bool Pinguim::temPeixePegado() const
+{
+	return temPeixe;
 }

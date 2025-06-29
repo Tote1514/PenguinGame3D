@@ -1,4 +1,7 @@
 #pragma once
+
+class Peixe;
+
 class Pinguim
 {
 public:
@@ -9,6 +12,9 @@ public:
 
 	void orientarPara(float dx, float dz);
 	void mover(float dx, float dz, float boundary = 0.5);
+
+	void verificarSePegouPeixe(Peixe& peixe);
+	bool temPeixePegado() const;
 
 private:
 	void desenhaCorpo() const;

@@ -1,4 +1,7 @@
 #pragma once
+
+class Area;
+
 class Peixe
 {
 public: 
@@ -9,6 +12,12 @@ public:
 	void desenha() const;
 
 	void mover(float delta, float boundary);
+
+	Area getArea() const;
+
+	float getX() const { return x; }
+	float getY() const { return y; }
+	float getZ() const { return z; }
 
 private:
 

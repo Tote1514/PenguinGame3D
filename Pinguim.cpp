@@ -6,6 +6,7 @@
 #include "Area.h"
 #include "Cor.h"
 #include "Peixe.h"
+#include "Filhote.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -36,7 +37,6 @@ void Pinguim::desenha() const
 	glPushMatrix();
 	glTranslatef(x, y, z);
 	glRotatef(anguloY, 0.0f, 1.0f, 0.0f);
-	glRotatef(anguloX, 1, 0, 0);
 	if (filhote)
 		glScalef(0.5f, 0.5f, 0.5f);
 
@@ -171,7 +171,6 @@ void Pinguim::andarFrente(float distancia)
 
 void Pinguim::andarLateral(float distancia)
 {
-	// 90 graus para a esquerda: usa cos para x e sin para z
 	x += distancia * cos(anguloY * 3.14159f / 180.0f);
 	z += distancia * sin(anguloY * 3.14159f / 180.0f);
 }
@@ -181,51 +180,30 @@ void Pinguim::orientarPara(float dx, float dz)
 	anguloY = atan2(dx, -dz) * 180.0f / 3.14159f;
 }
 
-void Pinguim::mover(float dx, float dz, float boundary)
+void Pinguim::mover(float dx, float dz)
 {
 	x += dx;
 	z += dz;
-
-	if (x > boundary)
-	{
-		y = -0.8;
-		anguloX = 90;
-	}
-	else if (x <= boundary)
-	{
-		y = 0.0;
-		anguloX = 0;
-	}
 }
 
 #include <iostream>
 
 void Pinguim::verificarSePegouPeixe(Peixe &peixe)
 {
-	// Ajusta a posi��o da cabe�a com base no �ngulo
-	float deslocamento = 0.5f; // dist�ncia da cabe�a em rela��o ao centro do corpo
+	float posicaoXCabeca = x;
+	float posicaoZCabeca = z;
+	float posicaoYCabeca = y;
 
-	float rad = anguloY * M_PI / 180.0f; // converte para radiano
+	// Dimens0es da cabe�a
+	float larguraCabeca = 1.f;
+	float profundidadeCabeca = 1.f;
+	float alturaCabeca = 1.f;
 
-	float posicaoXCabeca = x + deslocamento * sin(rad);
-	float posicaoZCabeca = z - deslocamento * cos(rad); // negativo porque o eixo Z cresce pra "tr�s"
-	float posicaoYCabeca = y + 1.0f;										// assumindo que a cabe�a fica acima do corpo
-
-	// Debug
-	std::cout << "anguloY: " << anguloY << std::endl;
-	std::cout << "posicaoXCabeca: " << posicaoXCabeca << ", posicaoZCabeca: " << posicaoZCabeca << std::endl;
-
-	// Dimens�es da cabe�a
-	float larguraCabeca = 0.4f;
-	float profundidadeCabeca = 0.4f;
-	float alturaCabeca = 0.4f;
-
-	// Corrigindo a ordem: altura, largura, profundidade, centroX, centroY, centroZ
-	Area areaCabeca(
+	Area areaPinguim(
 			alturaCabeca, larguraCabeca, profundidadeCabeca,
 			posicaoXCabeca, posicaoYCabeca, posicaoZCabeca);
 
-	if (areaCabeca.colideCom(peixe.getArea()))
+	if (areaPinguim.colideCom(peixe.getArea()))
 	{
 		temPeixe = true;
 		std::cout << "Pinguim pegou o peixe!" << std::endl;
@@ -235,4 +213,23 @@ void Pinguim::verificarSePegouPeixe(Peixe &peixe)
 bool Pinguim::temPeixePegado() const
 {
 	return temPeixe;
+}
+
+void Pinguim::verificarSeAlimentouFilhote(Filhote& filhote)
+{
+	float posicaoXCabeca = x;
+	float posicaoZCabeca = z;
+	float posicaoYCabeca = y;
+
+	// Dimens0es da cabe�a
+	float larguraCabeca = 1.f;
+	float profundidadeCabeca = 1.f;
+	float alturaCabeca = 1.f;
+
+	Area areaPinguim(
+		alturaCabeca, larguraCabeca, profundidadeCabeca,
+		posicaoXCabeca, posicaoYCabeca, posicaoZCabeca);
+
+	if (areaPinguim.colideCom(filhote.getArea()))
+		temPeixe = false;
 }

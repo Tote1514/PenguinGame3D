@@ -32,11 +32,17 @@ void Peixe::mover(float delta, float boundary)
 
 Area Peixe::getArea() const
 {
-	float largura = 0.5f; 
-	float altura = 0.5f; 
-	float profundidade = 0.5f; 
+	float largura = 1.f; 
+	float altura = 1.f; 
+	float profundidade = 1.f;
 
-	return Area(x, y, z, largura, altura, profundidade);
+	return Area(altura, largura, profundidade, x, y, z);
+}
+
+void Peixe::setNewPosition(float newX, float newZ)
+{
+	x = newX;
+	z = newZ;
 }
 
 void Peixe::desenha() const
@@ -51,7 +57,7 @@ void Peixe::desenha() const
 
 void Peixe::desenhaCorpo() const
 {
-	auto corLaranja = Cor::laranjaOpaco();
+	auto corLaranja = Cor::laranja();
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corLaranja[0]);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, corLaranja[1]);
 	glMaterialfv(GL_FRONT, GL_SHININESS, corLaranja[2]);
@@ -64,10 +70,10 @@ void Peixe::desenhaCorpo() const
 
 void Peixe::desenhaCauda() const
 {
-	auto corLaranja = Cor::laranjaOpaco();
+	auto corLaranja = Cor::laranja();
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corLaranja[0]);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, corLaranja[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corLaranja[2]);
+	glMaterialf(GL_FRONT, GL_SHININESS, 160);
 
 	glPushMatrix();
 		glTranslatef(-0.8f, 0.0f, 0.0f);

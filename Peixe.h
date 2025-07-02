@@ -18,6 +18,7 @@ public:
 	float getX() const { return x; }
 	float getY() const { return y; }
 	float getZ() const { return z; }
+	void setNewPosition(float newX, float newZ);
 
 private:
 

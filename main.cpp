@@ -1,18 +1,46 @@
 #include <GL/glut.h>
 #include <iostream>
 #include <vector>
+#include <cstdlib>
+#include <ctime>
 
 #include "Pinguim.h"
 #include "Cor.h"
 #include "Filhote.h"
 #include "Peixe.h"
 
-void desenha();
 void init();
 void reshape(int w, int h);
 void specialKeyboard(int key, int x, int y);
 void keyboard(unsigned char key, int x, int y);
 void doFrame(int value);
+
+float alturaDoChao{ -0.8 };
+
+std::vector<Peixe> cardume = {
+		Peixe(12.0f, alturaDoChao, -2.0f, 90),
+		Peixe(15.0f, alturaDoChao, 13.0f, 180),
+		Peixe(8.0f, alturaDoChao, -15.0f, 90),
+		Peixe(-10.0f, alturaDoChao, 10.0f, 180),
+		Peixe(-9.0f, alturaDoChao, -4.f, 90),
+};
+
+void gerarPosicoesAleatoriasPeixes()
+{
+    for (auto &peixe : cardume)
+    {
+        float novoX = -20.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (40.0f)));
+        float novoZ = -20.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (40.0f)));
+        peixe.setNewPosition(novoX, novoZ);
+    }
+}
+
+void timerPeixes(int value)
+{
+    gerarPosicoesAleatoriasPeixes();
+    
+    glutTimerFunc(10000, timerPeixes, 0);
+}
 
 GLfloat rotX, rotY;
 int INITIAL_WIDTH = 800;
@@ -20,38 +48,22 @@ int INITIAL_HEIGHT = 600;
 int window_top, window_side, window_front, window_free;
 std::vector<int> window_ids;
 
-float alturaDoChao{-0.8};
-
-Pinguim pinguim(-8.0f, 0.0f, 0.0f);
-Filhote filhote(-10.0f, 0.0f, 0.0f);
-
-std::vector<Peixe> cardume = {
-		Peixe(2.0f, alturaDoChao, -2.0f, 90),
-		Peixe(4.0f, alturaDoChao, 2.0f, 90),
-		Peixe(6.0f, alturaDoChao, -5.0f, 90),
-};
+Pinguim pinguim( 1, 0.0f, 0.0f);
+Filhote filhote( 0.0f, 0.0f, 0.0f);
 
 void drawScene()
 {
 	// Plataforma de gelo
-	glPushMatrix();
-	glTranslatef(-12, alturaDoChao, 0);
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, new float[4]{0.8f, 0.95f, 1.0f, 1.0f});
-	glMaterialfv(GL_FRONT, GL_SPECULAR, new float[4]{1.0f, 1.0f, 1.0f, 1.0f});
-	glMaterialf(GL_FRONT, GL_SHININESS, 50.0f);
-	glScalef(25.0f, 0.05f, 20.0f);
-	glutSolidCube(1.0f);
-	glPopMatrix();
 
-	// Água
+	float zoom{ 40.f };
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, new float[4] {0.8f, 0.95f, 1.0f, 1.0f});
+	glMaterialfv(GL_FRONT, GL_SPECULAR, new float[4] {1.0f, 1.0f, 1.0f, 1.0f});
+	glMaterialf(GL_FRONT, GL_SHININESS, 50.0f);
+
 	glPushMatrix();
-	glTranslatef(13, alturaDoChao, 0);
-	auto agua = Cor::azul();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, agua[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, agua[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, agua[2]);
-	glScalef(25.0f, 0.05f, 20.0f);
-	glutSolidCube(1.0f);
+		glTranslatef(0 , alturaDoChao, 0);
+		glScalef(zoom , 0.05f, zoom);
+		glutSolidCube(1.0f);
 	glPopMatrix();
 
 	pinguim.desenha();
@@ -122,16 +134,20 @@ void specialKeyboard(int key, int x, int y)
 	switch (key)
 	{
 	case GLUT_KEY_LEFT:
-		rotY--;
+		pinguim.orientarPara(1.0f, 0.0f);
+		pinguim.mover(0.2f, 0);
 		break;
 	case GLUT_KEY_RIGHT:
-		rotY++;
+		pinguim.orientarPara(-1.0f, 0.0f);
+		pinguim.mover(-0.2f, 0);
 		break;
 	case GLUT_KEY_UP:
-		rotX++;
+		pinguim.orientarPara(0.0f, 1.0f);
+		pinguim.mover(0, -0.2f);
 		break;
 	case GLUT_KEY_DOWN:
-		rotX--;
+		pinguim.orientarPara(0.0f, -1.0f);
+		pinguim.mover(0, 0.2f);
 		break;
 	}
 	glutPostRedisplay();
@@ -165,10 +181,14 @@ void doFrame(int value)
 {
 	for (auto &peixe : cardume)
 	{
-		peixe.mover(0.1f, 10.0f);
 		if (!pinguim.temPeixePegado())
 			pinguim.verificarSePegouPeixe(peixe);
 	}
+
+	if (pinguim.temPeixePegado())
+		pinguim.verificarSeAlimentouFilhote(filhote);
+
+
 	for (int id : window_ids)
 	{
 		glutSetWindow(id);
@@ -264,6 +284,8 @@ int main(int argc, char **argv)
 	window_ids.push_back(window_front);
 
 	glutTimerFunc(100, doFrame, 0);
+	srand(static_cast<unsigned int>(time(nullptr)));
+	glutTimerFunc(10000, timerPeixes, 0);
 	glutMainLoop();
 	return 0;
 }

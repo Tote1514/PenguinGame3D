@@ -1,31 +1,18 @@
 #pragma once
 
-class Area;
-
-class Peixe
-{
-public: 
-	Peixe(float x, float y, float z, float angulo);
-
-	~Peixe() = default;
-
-	void desenha() const;
-
-	void mover(float delta, float boundary);
-
-	Area getArea() const;
-
-	float getX() const { return x; }
-	float getY() const { return y; }
-	float getZ() const { return z; }
-
+class Peixe {
 private:
+    float x, y, z;
 
-	float x, y, z;
-	float anguloY;
+public:
+    Peixe();
+    
+    // Getters
+    float getX() const { return x; }
+    float getZ() const { return z; }
+    float getRadius() const { return 0.8f; }
 
-	void desenhaCorpo() const;
-	void desenhaCauda() const;
-
+    // Desenho
+    void desenha() const;
+    static void desenhaModelo();
 };
-

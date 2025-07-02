@@ -1,37 +1,45 @@
 #pragma once
+#include <GL/glut.h>
 
 class Peixe;
+class Filhote;
+class Buraco;
 
-class Pinguim
-{
-public:
-	Pinguim(float x, float y, float z);
-	float getX();
-	float getY();
-	float getZ();
-	void desenha() const;
-	void andarFrente(float distancia);
-	void andarLateral(float distancia);
-
-	void orientarPara(float dx, float dz);
-	void mover(float dx, float dz, float boundary = 0.5);
-
-	void verificarSePegouPeixe(Peixe &peixe);
-	bool temPeixePegado() const;
-
+class Pinguim {
 private:
-	void desenhaCorpo() const;
-	void desenhaOlhos() const;
-	void desenhaBico() const;
-	void desenhaPatas() const;
-	void desenhaAsas() const;
-	void desenhaCabeca() const;
+    float x, y, z;
+    float rotationY;
+    bool hasFish;
+    float wingAngle, legAngle;
+    bool movendo;
 
-protected:
-	float x, y, z;
-	float anguloY{90.f};
-	float anguloX{0.f};
-	bool filhote{false};
+public:
+    Pinguim();
+    void reset();
 
-	bool temPeixe{false};
+    // Getters
+    float getX() const { return x; }
+    float getY() const { return y; }
+    float getZ() const { return z; }
+    float getRadius() const { return 1.0f; }
+    bool temPeixe() const { return hasFish; }
+
+    // Setters e Ações
+    void setMovendo(bool status) { movendo = status; }
+    void pegarPeixe() { hasFish = true; }
+    void darPeixe() { hasFish = false; }
+    
+    // Lógica
+    void handleInput(int key, float limit);
+    void update();
+    void desenha() const;
+    void configuraCamera() const;
+
+    // Colisões
+    bool colideCom(const Peixe& peixe) const;
+    bool colideCom(const Filhote& filhote) const;
+    bool caiuNoBuraco(const Buraco& buraco) const;
+
+    // CORREÇÃO: Método de desenho do modelo agora é público e estático
+    static void desenhaModelo(bool isChick, bool hasFishAttached, float wingAngle, float legAngle);
 };

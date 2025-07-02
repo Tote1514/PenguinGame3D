@@ -1,238 +1,179 @@
 #include "Pinguim.h"
-
-#include <GL/glut.h>
-#include <math.h>
-
-#include "Area.h"
-#include "Cor.h"
 #include "Peixe.h"
+#include "Filhote.h"
+#include "Buraco.h"
+#include <cmath>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-Pinguim::Pinguim(float x, float y, float z)
-		: x(x), y(y), z(z)
-{
+Pinguim::Pinguim() {
+    reset();
 }
 
-float Pinguim::getX()
-{
-	return x;
+void Pinguim::reset() {
+    x = 0.0f; y = 0.75f; z = 5.0f;
+    rotationY = 180.0f;
+    hasFish = false;
+    wingAngle = 0.0f; legAngle = 0.0f;
+    movendo = false;
 }
 
-float Pinguim::getY()
-{
-	return y;
+void Pinguim::handleInput(int key, float limit) {
+    const float PINGUIN_MOVE_SPEED = 0.2f;
+    const float PINGUIN_ROTATE_SPEED = 3.0f;
+
+    switch (key) {
+        case GLUT_KEY_UP:
+            x += sin(rotationY * M_PI / 180.0) * PINGUIN_MOVE_SPEED;
+            z += cos(rotationY * M_PI / 180.0) * PINGUIN_MOVE_SPEED;
+            break;
+        case GLUT_KEY_DOWN:
+            x -= sin(rotationY * M_PI / 180.0) * PINGUIN_MOVE_SPEED;
+            z -= cos(rotationY * M_PI / 180.0) * PINGUIN_MOVE_SPEED;
+            break;
+        case GLUT_KEY_LEFT:
+            rotationY += PINGUIN_ROTATE_SPEED;
+            break;
+        case GLUT_KEY_RIGHT:
+            rotationY -= PINGUIN_ROTATE_SPEED;
+            break;
+    }
+
+    float boundary = limit / 2.0f - getRadius();
+    if (x > boundary) x = boundary;
+    if (x < -boundary) x = -boundary;
+    if (z > boundary) z = boundary;
+    if (z < -boundary) z = -boundary;
 }
 
-float Pinguim::getZ()
-{
-	return z;
+void Pinguim::update() {
+    if (movendo) {
+        wingAngle = 40.0f * sin(glutGet(GLUT_ELAPSED_TIME) * 0.01);
+        legAngle = 35.0f * sin(glutGet(GLUT_ELAPSED_TIME) * 0.01);
+    } else {
+        wingAngle = 0;
+        legAngle = 0;
+    }
+    movendo = false;
 }
 
-void Pinguim::desenha() const
-{
-	glPushMatrix();
-	glTranslatef(x, y, z);
-	glRotatef(anguloY, 0.0f, 1.0f, 0.0f);
-	glRotatef(anguloX, 1, 0, 0);
-	if (filhote)
-		glScalef(0.5f, 0.5f, 0.5f);
-
-	desenhaCorpo();
-	desenhaOlhos();
-	desenhaBico();
-	desenhaPatas();
-	desenhaAsas();
-	desenhaCabeca();
-	glPopMatrix();
+void Pinguim::desenha() const {
+    glPushMatrix();
+    glTranslatef(x, y, z);
+    glRotatef(rotationY, 0, 1, 0);
+    // Chama o método de desenho estático, passando os parâmetros de animação
+    desenhaModelo(false, hasFish, wingAngle, legAngle);
+    glPopMatrix();
 }
 
-void Pinguim::desenhaCorpo() const
-{
-	auto corPreta = Cor::preto();
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corPreta[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, corPreta[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corPreta[2]);
-
-	glPushMatrix();
-	glScalef(0.6f, 0.7f, 0.6f);
-	glutSolidSphere(1.0f, 20, 20);
-	glPopMatrix();
-
-	auto corBranca = Cor::branco();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corBranca[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, corBranca[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corBranca[2]);
-
-	glPushMatrix();
-	glTranslatef(0.0f, 0.f, 0.5f);
-	glScalef(0.3f, 0.4f, 0.1f);
-	glutSolidSphere(1.0f, 20, 20);
-	glPopMatrix();
+void Pinguim::configuraCamera() const {
+    float camX = x - 8 * sin(rotationY * M_PI / 180.0);
+    float camZ = z - 8 * cos(rotationY * M_PI / 180.0);
+    gluLookAt(camX, y + 4, camZ, x, y, z, 0, 1, 0);
 }
 
-void Pinguim::desenhaOlhos() const
-{
-	auto corBranca = Cor::branco();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corBranca[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, corBranca[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corBranca[2]);
-
-	glPushMatrix();
-	glTranslatef(-0.2f, 1.2f, 0.2f);
-	glutSolidSphere(0.1f, 20, 20);
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0.2f, 1.2f, 0.2f);
-	glutSolidSphere(0.1f, 20, 20);
-	glPopMatrix();
+// Implementação das colisões
+bool Pinguim::colideCom(const Peixe& peixe) const {
+    float dist = sqrt(pow(x - peixe.getX(), 2) + pow(z - peixe.getZ(), 2));
+    return dist < getRadius() + peixe.getRadius();
 }
 
-void Pinguim::desenhaBico() const
-{
-	auto corLaranja = Cor::laranjaOpaco();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corLaranja[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, corLaranja[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corLaranja[2]);
-
-	glPushMatrix();
-	glTranslatef(0.0f, 1.0f, 0.3f);
-	glScalef(0.7f, 0.7f, 1.f);
-	glutSolidCone(0.2f, 0.4f, 20, 20);
-	glPopMatrix();
-
-	if (!temPeixe)
-		return;
-
-	Peixe peixeNoBico(0.0f, 1.0f, 0.8f, 180);
-	peixeNoBico.desenha();
+bool Pinguim::colideCom(const Filhote& filhote) const {
+    float dist = sqrt(pow(x - filhote.getX(), 2) + pow(z - filhote.getZ(), 2));
+    return dist < getRadius() + filhote.getRadius();
 }
 
-void Pinguim::desenhaPatas() const
-{
-	auto corLaranja = Cor::laranja();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corLaranja[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, corLaranja[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corLaranja[2]);
-
-	glPushMatrix();
-	glTranslatef(-0.3f, -0.7f, 0.0f);
-	glScalef(0.5f, 0.2f, 0.5f);
-	glutSolidSphere(0.5f, 20, 20);
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0.3f, -0.7f, 0.0f);
-	glScalef(0.5f, 0.2f, 0.5f);
-	glutSolidSphere(0.5f, 20, 20);
-	glPopMatrix();
+bool Pinguim::caiuNoBuraco(const Buraco& buraco) const {
+    float dist = sqrt(pow(x - buraco.getX(), 2) + pow(z - buraco.getZ(), 2));
+    return dist < buraco.getRadius();
 }
 
-void Pinguim::desenhaAsas() const
-{
-	auto corPreta = Cor::preto();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corPreta[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, corPreta[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corPreta[2]);
-	glPushMatrix();
-	glTranslatef(-0.6f, 0.0f, 0.0f);
-	glScalef(0.2f, 0.5f, 0.2f);
-	glutSolidSphere(1.0f, 20, 20);
-	glPopMatrix();
-	glPushMatrix();
-	glTranslatef(0.6f, 0.0f, 0.0f);
-	glScalef(0.2f, 0.5f, 0.2f);
-	glutSolidSphere(1.0f, 20, 20);
-	glPopMatrix();
-}
+// Modelo genérico do Pinguim/Filhote
+void Pinguim::desenhaModelo(bool isChick, bool hasFishAttached, float wingAngle, float legAngle) {
+    // Corpo
+    glColor3f(0.1f, 0.1f, 0.1f);
+    glPushMatrix();
+    glScalef(1.0f, 1.3f, 1.0f);
+    glutSolidSphere(isChick ? 0.3 : 0.5, 20, 20);
+    glPopMatrix();
+    
+    // Barriga
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.0f, 0.25f);
+    glScalef(0.8f, 1.1f, 0.8f);
+    glutSolidSphere(isChick ? 0.3 : 0.5, 20, 20);
+    glPopMatrix();
+    
+    // Cabeça
+    glColor3f(0.1f, 0.1f, 0.1f);
+    glPushMatrix();
+    glTranslatef(0.0f, isChick ? 0.45f : 0.75f, 0.0f);
+    glutSolidSphere(isChick ? 0.25 : 0.35, 20, 20);
+    glPopMatrix();
+    
+    // Bico e Peixe
+    glColor3f(1.0f, 0.6f, 0.0f);
+    glPushMatrix();
+    glTranslatef(0.0f, isChick ? 0.5f : 0.75f, isChick ? 0.22f : 0.3f);
+    glRotatef(90.0f, 1, 0, 0);
+    glutSolidCone(isChick ? 0.08 : 0.1, isChick ? 0.3 : 0.5, 10, 10);
+    if (hasFishAttached) {
+        glPushMatrix();
+        glTranslatef(0.0f, 0.4f, 0.0f);
+        glRotatef(-90, 1, 0, 0);
+        glScalef(0.3f, 0.3f, 0.3f);
+        Peixe::desenhaModelo();
+        glPopMatrix();
+    }
+    glPopMatrix();
 
-void Pinguim::desenhaCabeca() const
-{
-	auto corPreto = Cor::preto();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, corPreto[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, corPreto[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, corPreto[2]);
+    // Olhos
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glPushMatrix();
+    glTranslatef(-0.1f, isChick ? 0.55f : 0.85f, isChick ? 0.2f : 0.3f);
+    glutSolidSphere(isChick ? 0.05 : 0.07, 10, 10);
+    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(0.1f, isChick ? 0.55f : 0.85f, isChick ? 0.2f : 0.3f);
+    glutSolidSphere(isChick ? 0.05 : 0.07, 10, 10);
+    glPopMatrix();
 
-	glPushMatrix();
-	glTranslatef(0.0f, 1.f, 0.0f);
-	glutSolidSphere(0.4f, 20, 20);
-	glPopMatrix();
-}
+    // Patas
+    glColor3f(1.0f, 0.6f, 0.0f);
+    float legPosX = isChick ? 0.15f : 0.25f;
+    float legPosY = isChick ? -0.2f : -0.6f;
+    glPushMatrix();
+    glTranslatef(-legPosX, legPosY, 0.1f);
+    if (!isChick) glRotatef(legAngle, 1, 0, 0);
+    glScalef(isChick?0.15f:0.2f, isChick?0.08f:0.1f, isChick?0.3f:0.5f);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(legPosX, legPosY, 0.1f);
+    if (!isChick) glRotatef(-legAngle, 1, 0, 0);
+    glScalef(isChick?0.15f:0.2f, isChick?0.08f:0.1f, isChick?0.3f:0.5f);
+    glutSolidCube(1.0);
+    glPopMatrix();
 
-void Pinguim::andarFrente(float distancia)
-{
-	x += distancia * sin(anguloY * 3.14159f / 180.0f);
-	z -= distancia * cos(anguloY * 3.14159f / 180.0f);
-}
-
-void Pinguim::andarLateral(float distancia)
-{
-	// 90 graus para a esquerda: usa cos para x e sin para z
-	x += distancia * cos(anguloY * 3.14159f / 180.0f);
-	z += distancia * sin(anguloY * 3.14159f / 180.0f);
-}
-
-void Pinguim::orientarPara(float dx, float dz)
-{
-	anguloY = atan2(dx, -dz) * 180.0f / 3.14159f;
-}
-
-void Pinguim::mover(float dx, float dz, float boundary)
-{
-	x += dx;
-	z += dz;
-
-	if (x > boundary)
-	{
-		y = -0.8;
-		anguloX = 90;
-	}
-	else if (x <= boundary)
-	{
-		y = 0.0;
-		anguloX = 0;
-	}
-}
-
-#include <iostream>
-
-void Pinguim::verificarSePegouPeixe(Peixe &peixe)
-{
-	// Ajusta a posi��o da cabe�a com base no �ngulo
-	float deslocamento = 0.5f; // dist�ncia da cabe�a em rela��o ao centro do corpo
-
-	float rad = anguloY * M_PI / 180.0f; // converte para radiano
-
-	float posicaoXCabeca = x + deslocamento * sin(rad);
-	float posicaoZCabeca = z - deslocamento * cos(rad); // negativo porque o eixo Z cresce pra "tr�s"
-	float posicaoYCabeca = y + 1.0f;										// assumindo que a cabe�a fica acima do corpo
-
-	// Debug
-	std::cout << "anguloY: " << anguloY << std::endl;
-	std::cout << "posicaoXCabeca: " << posicaoXCabeca << ", posicaoZCabeca: " << posicaoZCabeca << std::endl;
-
-	// Dimens�es da cabe�a
-	float larguraCabeca = 0.4f;
-	float profundidadeCabeca = 0.4f;
-	float alturaCabeca = 0.4f;
-
-	// Corrigindo a ordem: altura, largura, profundidade, centroX, centroY, centroZ
-	Area areaCabeca(
-			alturaCabeca, larguraCabeca, profundidadeCabeca,
-			posicaoXCabeca, posicaoYCabeca, posicaoZCabeca);
-
-	if (areaCabeca.colideCom(peixe.getArea()))
-	{
-		temPeixe = true;
-		std::cout << "Pinguim pegou o peixe!" << std::endl;
-	}
-}
-
-bool Pinguim::temPeixePegado() const
-{
-	return temPeixe;
+    // Asas
+    if (!isChick) {
+        glColor3f(0.1f, 0.1f, 0.1f);
+        glPushMatrix();
+        glTranslatef(-0.5f, 0.0f, 0.0f);
+        glRotatef(-20, 0, 0, 1);
+        glRotatef(wingAngle, 1, 0, 0);
+        glScalef(0.1f, 0.6f, 0.4f);
+        glutSolidCube(1.0);
+        glPopMatrix();
+        glPushMatrix();
+        glTranslatef(0.5f, 0.0f, 0.0f);
+        glRotatef(20, 0, 0, 1);
+        glRotatef(-wingAngle, 1, 0, 0);
+        glScalef(0.1f, 0.6f, 0.4f);
+        glutSolidCube(1.0);
+        glPopMatrix();
+    }
 }

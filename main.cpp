@@ -1,269 +1,344 @@
 #include <GL/glut.h>
 #include <iostream>
 #include <vector>
+#include <string>
+#include <iomanip>
+#include <sstream>
 
 #include "Pinguim.h"
-#include "Cor.h"
 #include "Filhote.h"
 #include "Peixe.h"
+#include "Buraco.h"
 
-void desenha();
-void init();
-void reshape(int w, int h);
-void specialKeyboard(int key, int x, int y);
-void keyboard(unsigned char key, int x, int y);
-void doFrame(int value);
+// --- Constantes Globais ---
+const int FPS = 60;
+const int DELAY = 1000 / FPS;
+const float ICE_SHEET_SIZE = 40.0f;
 
-GLfloat rotX, rotY;
-int INITIAL_WIDTH = 800;
-int INITIAL_HEIGHT = 600;
-int window_top, window_side, window_front, window_free;
+// --- Variáveis Globais de Jogo ---
+Pinguim pinguim;
+Filhote filhote(0.0f, 0.5f, 0.0f);
+std::vector<Peixe> peixes;
+std::vector<Buraco> buracos;
+
+int chickLifeTimer;
+int sessionTimer;
+int framesSinceLastSecond = 0;
+int holeSpawnTimer = 0;
+bool isGameOver = false;
+bool playerWon = false;
+std::string gameOverReason = "";
+
+int window_top, window_chase, window_side, window_free;
 std::vector<int> window_ids;
 
-float alturaDoChao{-0.8};
+// --- Protótipos ---
+void initializeGame();
+void drawScene();
+void drawUI();
+void reshape_perspective(int w, int h);
+void reshape_ortho(int w, int h);
 
-Pinguim pinguim(-8.0f, 0.0f, 0.0f);
-Filhote filhote(-10.0f, 0.0f, 0.0f);
 
-std::vector<Peixe> cardume = {
-		Peixe(2.0f, alturaDoChao, -2.0f, 90),
-		Peixe(4.0f, alturaDoChao, 2.0f, 90),
-		Peixe(6.0f, alturaDoChao, -5.0f, 90),
-};
-
-void drawScene()
-{
-	// Plataforma de gelo
-	glPushMatrix();
-	glTranslatef(-12, alturaDoChao, 0);
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, new float[4]{0.8f, 0.95f, 1.0f, 1.0f});
-	glMaterialfv(GL_FRONT, GL_SPECULAR, new float[4]{1.0f, 1.0f, 1.0f, 1.0f});
-	glMaterialf(GL_FRONT, GL_SHININESS, 50.0f);
-	glScalef(25.0f, 0.05f, 20.0f);
-	glutSolidCube(1.0f);
-	glPopMatrix();
-
-	// Água
-	glPushMatrix();
-	glTranslatef(13, alturaDoChao, 0);
-	auto agua = Cor::azul();
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, agua[0]);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, agua[1]);
-	glMaterialfv(GL_FRONT, GL_SHININESS, agua[2]);
-	glScalef(25.0f, 0.05f, 20.0f);
-	glutSolidCube(1.0f);
-	glPopMatrix();
-
-	pinguim.desenha();
-	filhote.desenha();
-
-	for (auto &peixe : cardume)
-		peixe.desenha();
-
-	glutSwapBuffers();
+// --- Funções Auxiliares ---
+std::string formatTime(int totalSeconds) {
+    if (totalSeconds < 0) totalSeconds = 0;
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+    std::ostringstream oss;
+    oss << std::setw(2) << std::setfill('0') << minutes << ":" << std::setw(2) << std::setfill('0') << seconds;
+    return oss.str();
 }
 
-void display_top()
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	gluLookAt(pinguim.getX(), pinguim.getY() + 20.0f, pinguim.getZ(),
-						pinguim.getX(), pinguim.getY(), pinguim.getZ(),
-						0, 0, -1);
-	drawScene();
+void checkCollisions() {
+    if (pinguim.temPeixe()) {
+        if (pinguim.colideCom(filhote)) {
+            pinguim.darPeixe();
+            chickLifeTimer += 60;
+            peixes.push_back(Peixe());
+        }
+    } else {
+        for (auto it = peixes.begin(); it != peixes.end(); ++it) {
+            if (pinguim.colideCom(*it)) {
+                pinguim.pegarPeixe();
+                it = peixes.erase(it);
+                break;
+            }
+        }
+    }
+    for (const auto& hole : buracos) {
+        if (pinguim.caiuNoBuraco(hole)) {
+            isGameOver = true;
+            gameOverReason = "Voce caiu em um buraco!";
+        }
+    }
 }
 
-void display_side()
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+void updateGameLogic() {
+    framesSinceLastSecond++;
+    if (framesSinceLastSecond >= FPS) {
+        if (chickLifeTimer > 0) chickLifeTimer--;
+        else {
+            isGameOver = true;
+            gameOverReason = "O filhote nao sobreviveu!";
+        }
+        if (sessionTimer > 0) sessionTimer--;
+        else if (!isGameOver) {
+            playerWon = true;
+        }
+        framesSinceLastSecond = 0;
 
-	gluLookAt(pinguim.getX(), pinguim.getY() + 5.0f, pinguim.getZ() + 20.0f,
-						pinguim.getX(), pinguim.getY(), pinguim.getZ(),
-						0, 1, 0);
-	drawScene();
+        holeSpawnTimer++;
+        if (holeSpawnTimer >= 15 && buracos.size() < 10) {
+            buracos.push_back(Buraco());
+            holeSpawnTimer = 0;
+        }
+    }
+    pinguim.update();
+    checkCollisions();
 }
 
-void display_front()
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	gluLookAt(pinguim.getX() + 20.0f, pinguim.getY() + 5.0f, pinguim.getZ(), pinguim.getX(), pinguim.getY(), pinguim.getZ(),
-						0, 1, 0);
-	drawScene();
+// --- Funções de Desenho ---
+void drawScene() {
+    Buraco::desenhaPlataforma(ICE_SHEET_SIZE);
+    filhote.desenha();
+    for (const auto& fish : peixes) {
+        fish.desenha();
+    }
+    for (const auto& hole : buracos) {
+        hole.desenha();
+    }
+    pinguim.desenha();
 }
 
-void display_free()
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+void drawUI() {
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glDisable(GL_LIGHTING);
 
-	gluLookAt(pinguim.getX() + 10.0f, pinguim.getY() + 10.0f, pinguim.getZ() + 10.0f,
-						pinguim.getX(), pinguim.getY(), pinguim.getZ(),
-						0, 1, 0);
-	drawScene();
+    int w = glutGet(GLUT_WINDOW_WIDTH);
+    int h = glutGet(GLUT_WINDOW_HEIGHT);
+
+    if (playerWon || isGameOver) {
+        std::string endMsg = playerWon ? "VOCE GANHOU!" : "GAME OVER";
+        if (playerWon) glColor3f(0.1f, 0.8f, 0.1f);
+        else glColor3f(0.8f, 0.1f, 0.1f);
+        glRasterPos2i(w / 2 - 100, h / 2 + 20);
+        for (char c : endMsg) glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+
+        if (isGameOver && !gameOverReason.empty()) {
+             glColor3f(0.8f, 0.1f, 0.1f);
+             glRasterPos2i(w / 2 - 120, h / 2);
+             for (char c : gameOverReason) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        }
+
+        glColor3f(0.0f, 0.0f, 0.0f);
+        std::string restartMsg = "Pressione 'R' para reiniciar";
+        glRasterPos2i(w / 2 - 100, h / 2 - 30);
+        for (char c : restartMsg) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    } else {
+        glColor3f(0.0f, 0.0f, 0.0f);
+        std::string lifeStr = "Vida do Filhote: " + formatTime(chickLifeTimer);
+        glRasterPos2i(10, h - 20);
+        for (char c : lifeStr) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+
+        std::string sessionStr = "Vitoria em: " + formatTime(sessionTimer);
+        glRasterPos2i(10, h - 40);
+        for (char c : sessionStr) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    }
+    
+    glEnable(GL_LIGHTING);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 }
 
-void reshape(int w, int h)
-{
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(45.0, GLfloat(w) / GLfloat(h), 0.1, 100.0);
+// --- Funções do GLUT ---
+void init(void) {
+    glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    GLfloat light_ambient[] = {0.3, 0.3, 0.3, 1.0};
+    GLfloat light_diffuse[] = {1.0, 1.0, 1.0, 1.0};
+    GLfloat light_specular[] = {1.0, 1.0, 1.0, 1.0};
+    GLfloat light_position[] = {10.0, 20.0, 10.0, 0.0};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glEnable(GL_COLOR_MATERIAL);
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 }
 
-void specialKeyboard(int key, int x, int y)
-{
-	switch (key)
-	{
-	case GLUT_KEY_LEFT:
-		rotY--;
-		break;
-	case GLUT_KEY_RIGHT:
-		rotY++;
-		break;
-	case GLUT_KEY_UP:
-		rotX++;
-		break;
-	case GLUT_KEY_DOWN:
-		rotX--;
-		break;
-	}
-	glutPostRedisplay();
+void timer(int /*value*/) {
+    if (!isGameOver && !playerWon) {
+        updateGameLogic();
+    }
+    for (int id : window_ids) {
+        glutSetWindow(id);
+        glutPostRedisplay();
+    }
+    glutTimerFunc(DELAY, timer, 0);
 }
 
-void keyboard(unsigned char key, int x, int y)
-{
-	switch (tolower(key))
-	{
-	case 'w':
-		pinguim.orientarPara(0.0f, 1.0f);
-		pinguim.mover(0, -0.2f);
-		break;
-	case 's':
-		pinguim.orientarPara(0.0f, -1.0f);
-		pinguim.mover(0, 0.2f);
-		break;
-	case 'a':
-		pinguim.orientarPara(-1.0f, 0.0f);
-		pinguim.mover(-0.2f, 0);
-		break;
-	case 'd':
-		pinguim.orientarPara(1.0f, 0.0f);
-		pinguim.mover(0.2f, 0);
-		break;
-	}
-	glutPostRedisplay();
+void reshape_perspective(int w, int h) {
+    if (h == 0) h = 1;
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60.0, (float)w / h, 1.0, 100.0);
+    glMatrixMode(GL_MODELVIEW);
 }
 
-void doFrame(int value)
-{
-	for (auto &peixe : cardume)
-	{
-		peixe.mover(0.1f, 10.0f);
-		if (!pinguim.temPeixePegado())
-			pinguim.verificarSePegouPeixe(peixe);
-	}
-	for (int id : window_ids)
-	{
-		glutSetWindow(id);
-		glutPostRedisplay();
-	}
-	glutTimerFunc(1000 / 60, doFrame, 0);
+void reshape_ortho(int w, int h) {
+    if (h == 0) h = 1;
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    float aspect = (float)w / h;
+    float ortho_size = 25.0f; // Zoom da câmera de topo
+    glOrtho(-ortho_size * aspect, ortho_size * aspect, -ortho_size, ortho_size, 1.0, 100.0);
+    glMatrixMode(GL_MODELVIEW);
 }
 
-void init()
-{
-	glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
-	GLfloat black[] = {0.0, 0.0, 0.0, 1.0};
-	GLfloat yellow[] = {1.0, 1.0, 0.0, 1.0};
-	GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
-	GLfloat cyan[] = {0.0, 1.0, 1.0, 1.0};
-	GLfloat direction[] = {0.0, -10.0, 0.0, 1.0};
-	GLfloat direction1[] = {0.0, 10.0, 0.0, 1.0};
 
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, cyan);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-	glMaterialf(GL_FRONT, GL_SHININESS, 30);
-
-	glLightfv(GL_LIGHT0, GL_AMBIENT, black);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, yellow);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, white);
-	glLightfv(GL_LIGHT0, GL_POSITION, direction);
-
-	glLightfv(GL_LIGHT1, GL_AMBIENT, black);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, white);
-	glLightfv(GL_LIGHT1, GL_POSITION, direction1);
-
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_LIGHT1);
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_COLOR_MATERIAL);
+void display_top() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW); // CORREÇÃO
+    glLoadIdentity();          // CORREÇÃO: Reseta a matriz da câmera
+    gluLookAt(pinguim.getX(), 50.0, pinguim.getZ(), pinguim.getX(), 0, pinguim.getZ(), 0, 0, -1);
+    drawScene();
+    drawUI();
+    glutSwapBuffers();
 }
 
-int main(int argc, char **argv)
-{
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+void display_chase() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW); // CORREÇÃO
+    glLoadIdentity();          // CORREÇÃO: Reseta a matriz da câmera
+    pinguim.configuraCamera();
+    drawScene();
+    drawUI();
+    glutSwapBuffers();
+}
 
-	const int spacing = 10;
-	const int winW = 600;
-	const int winH = 450;
-	const int baseX = 50;
-	const int baseY = 50;
+void display_side() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW); // CORREÇÃO
+    glLoadIdentity();          // CORREÇÃO: Reseta a matriz da câmera
+    gluLookAt(pinguim.getX() + 25.0, pinguim.getY() + 5, pinguim.getZ(), pinguim.getX(), pinguim.getY(), pinguim.getZ(), 0, 1, 0);
+    drawScene();
+    drawUI();
+    glutSwapBuffers();
+}
 
-	// Free camera (canto superior esquerdo)
-	glutInitWindowSize(winW, winH);
-	glutInitWindowPosition(baseX + 0 * (winW + spacing), baseY + 0 * (winH + spacing));
-	window_free = glutCreateWindow("Free Camera");
-	init();
-	glutDisplayFunc(display_free);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(specialKeyboard);
-	window_ids.push_back(window_free);
+void display_free() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW); // CORREÇÃO
+    glLoadIdentity();          // CORREÇÃO: Reseta a matriz da câmera
+    gluLookAt(3.0, 20.0, 20.0, 0.0, 0.0, 0.0, 0, 1, 0);
+    drawScene();
+    drawUI();
+    glutSwapBuffers();
+}
 
-	// Top view (canto superior direito)
-	glutInitWindowSize(winW, winH);
-	glutInitWindowPosition(baseX + 1 * (winW + spacing), baseY + 0 * (winH + spacing));
-	window_top = glutCreateWindow("Top Camera");
-	init();
-	glutDisplayFunc(display_top);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(specialKeyboard);
-	window_ids.push_back(window_top);
+void keyboard(unsigned char key, int /*x*/, int /*y*/) {
+    if (isGameOver || playerWon) {
+        if (key == 'r' || key == 'R') {
+            initializeGame();
+        }
+    }
+    if (key == 27) exit(0);
+}
 
-	// Side view (canto inferior esquerdo)
-	glutInitWindowSize(winW, winH);
-	glutInitWindowPosition(baseX + 0 * (winW + spacing), baseY + 1 * (winH + spacing));
-	window_side = glutCreateWindow("Side Camera");
-	init();
-	glutDisplayFunc(display_side);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(specialKeyboard);
-	window_ids.push_back(window_side);
+void specialKeyboard(int key, int /*x*/, int /*y*/) {
+    if (isGameOver || playerWon) return;
+    pinguim.setMovendo(true);
+    pinguim.handleInput(key, ICE_SHEET_SIZE);
+}
 
-	// Front view (canto inferior direito)
-	glutInitWindowSize(winW, winH);
-	glutInitWindowPosition(baseX + 1 * (winW + spacing), baseY + 1 * (winH + spacing));
-	window_front = glutCreateWindow("Front Camera");
-	init();
-	glutDisplayFunc(display_front);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(specialKeyboard);
-	window_ids.push_back(window_front);
+void initializeGame() {
+    peixes.clear();
+    buracos.clear();
+    srand(static_cast<unsigned int>(time(0)));
 
-	glutTimerFunc(100, doFrame, 0);
-	glutMainLoop();
-	return 0;
+    for (int i = 0; i < 5; ++i) {
+        peixes.push_back(Peixe());
+    }
+    for (int i = 0; i < 3; ++i) {
+        buracos.push_back(Buraco());
+    }
+
+    pinguim.reset();
+    isGameOver = false;
+    playerWon = false;
+    gameOverReason = "";
+    chickLifeTimer = 60;
+    sessionTimer = 300;
+    framesSinceLastSecond = 0;
+    holeSpawnTimer = 0;
+}
+
+int main(int argc, char **argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    
+    // Inicializa o jogo ANTES de criar as janelas
+    init();
+    initializeGame();
+
+    // Janela 1: Câmera de perseguição ("de frente" para o pinguim)
+    glutInitWindowSize(600, 600);
+    glutInitWindowPosition(50, 50);
+    window_chase = glutCreateWindow("Penguin Adventure - Eixo Z (Perseguicao)");
+    init(); // Chama init para cada contexto de janela
+    glutDisplayFunc(display_chase);
+    glutReshapeFunc(reshape_perspective);
+    glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKeyboard);
+    window_ids.push_back(window_chase);
+
+    // Janela 2: Câmera de topo
+    glutInitWindowPosition(700, 50);
+    window_top = glutCreateWindow("Penguin Adventure - Eixo Y (Topo)");
+    init();
+    glutDisplayFunc(display_top);
+    glutReshapeFunc(reshape_ortho); // CORREÇÃO: Usa reshape ortográfico
+    glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKeyboard);
+    window_ids.push_back(window_top);
+
+    // Janela 3: Câmera lateral
+    glutInitWindowPosition(50, 700);
+    window_side = glutCreateWindow("Penguin Adventure - Eixo X (Lateral)");
+    init();
+    glutDisplayFunc(display_side);
+    glutReshapeFunc(reshape_perspective);
+    glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKeyboard);
+    window_ids.push_back(window_side);
+
+    // Janela 4: Câmera livre
+    glutInitWindowPosition(700, 700);
+    window_free = glutCreateWindow("Penguin Adventure - Posicao Livre");
+    init();
+    glutDisplayFunc(display_free);
+    glutReshapeFunc(reshape_perspective);
+    glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKeyboard);
+    window_ids.push_back(window_free);
+    
+    glutTimerFunc(DELAY, timer, 0);
+    glutMainLoop();
+    return 0;
 }

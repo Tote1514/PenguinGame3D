@@ -1,10 +1,11 @@
-#include <GL/glut.h>
+﻿#include <GL/glut.h>
 #include <iostream>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <GLES/gl.h>
 
 #include "Area.h"
 #include "Pinguim.h"
@@ -12,6 +13,9 @@
 #include "Filhote.h"
 #include "Peixe.h"
 #include "Gelo.h"
+
+#define STB_IMAGE_IMPLEMENTATION  
+#include "stb_image.h"
 
 void init();
 void reshape(int w, int h);
@@ -30,11 +34,14 @@ int window_top, window_side, window_front, window_free;
 std::vector<int> window_ids;
 
 bool acabouOJogo = false;
-bool jogadorGanhou = false;
+bool jogadorGanhou = false;	
 std::string razaoDeTerAcabado = "";
 
 Pinguim pinguim(1, 0.0f, 0.0f);
 Filhote filhote(0.0f, 0.0f, 0.0f);
+
+GLuint texID[1];
+const char * textureFileNames = "imagens/gelo.jpg";
 
 std::vector<Peixe> cardume = {
 		Peixe(12.0f, alturaDoChao, -2.0f, 90),
@@ -51,6 +58,36 @@ std::vector<Gelo> gelos =
 	Gelo(13.0f, alturaDoChao, -7.0f),
 	Gelo(15.0f, alturaDoChao, 10.0f)
 };
+
+void carregaGeloTextura() 
+{
+	int width, height, nrChannels;
+	unsigned char* data;
+
+	glGenTextures(1, texID);
+
+	glBindTexture(GL_TEXTURE_2D, texID[0]);
+	// set the texture wrapping/filtering options (on the currently bound texture object)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load and generate the texture
+
+	data = stbi_load(textureFileNames, &width, &height, &nrChannels, 0);
+
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+	}
+	else
+	{
+		printf("Failed to load texture\n");
+	}
+	stbi_image_free(data);
+}
 
 std::string formatTime(int totalSeconds) {
 	if (totalSeconds < 0) totalSeconds = 0;
@@ -148,15 +185,24 @@ void drawScene()
 {
 	// Plataforma de gelo
 	float zoom{ 40.f };
+
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, new float[4] {0.8f, 0.95f, 1.0f, 1.0f});
 	glMaterialfv(GL_FRONT, GL_SPECULAR, new float[4] {1.0f, 1.0f, 1.0f, 1.0f});
 	glMaterialf(GL_FRONT, GL_SHININESS, 50.0f);
+
+	glEnable(GL_TEXTURE_2D);
+
+	/* Draw a teapot with the first texture at (-2.3,0.3,0) */
+
+	glBindTexture(GL_TEXTURE_2D, texID[0]);  // Bind texture #0 for use on the first teapot.
 
 	glPushMatrix();
 		glTranslatef(0 , alturaDoChao, 0);
 		glScalef(zoom , 0.05f, zoom);
 		glutSolidCube(1.0f);
 	glPopMatrix();
+
+	glDisable(GL_TEXTURE_2D);
 
 	pinguim.desenha();
 	filhote.desenha();
@@ -313,33 +359,13 @@ void atualizarTempoJogo(int value)
 
 void init()
 {
-	glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
-	GLfloat black[] = {0.0, 0.0, 0.0, 1.0};
-	GLfloat yellow[] = {1.0, 1.0, 0.0, 1.0};
-	GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
-	GLfloat cyan[] = {0.0, 1.0, 1.0, 1.0};
-	GLfloat direction[] = {0.0, -10.0, 0.0, 1.0};
-	GLfloat direction1[] = {0.0, 10.0, 0.0, 1.0};
+	glClearColor(0.529f, 0.808f, 0.922f, 1.0f); // background color
 
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, cyan);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-	glMaterialf(GL_FRONT, GL_SHININESS, 30);
-
-	glLightfv(GL_LIGHT0, GL_AMBIENT, black);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, yellow);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, white);
-	glLightfv(GL_LIGHT0, GL_POSITION, direction);
-
-	glLightfv(GL_LIGHT1, GL_AMBIENT, black);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, white);
-	glLightfv(GL_LIGHT1, GL_POSITION, direction1);
-
+	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	glEnable(GL_LIGHT1);
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_COLOR_MATERIAL);
+	float white[4] = { 1, 1, 1, 1 };  // A white material, suitable for texturing.
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, white);
 }
 
 int main(int argc, char **argv)
@@ -353,10 +379,13 @@ int main(int argc, char **argv)
 	const int baseX = 50;
 	const int baseY = 50;
 
+
 	glutInitWindowSize(winW, winH);
 	glutInitWindowPosition(baseX + 0 * (winW + spacing), baseY + 0 * (winH + spacing));
 	window_free = glutCreateWindow("Free Camera");
 	init();
+	carregaGeloTextura();
+	
 	glutDisplayFunc(display_free);
 	glutReshapeFunc(reshape);
 	glutSpecialFunc(specialKeyboard);
@@ -366,6 +395,7 @@ int main(int argc, char **argv)
 	glutInitWindowPosition(baseX + 1 * (winW + spacing), baseY + 0 * (winH + spacing));
 	window_top = glutCreateWindow("Top Camera");
 	init();
+	carregaGeloTextura();
 	glutDisplayFunc(display_top);
 	glutReshapeFunc(reshape);
 	glutSpecialFunc(specialKeyboard);
@@ -375,6 +405,7 @@ int main(int argc, char **argv)
 	glutInitWindowPosition(baseX + 0 * (winW + spacing), baseY + 1 * (winH + spacing));
 	window_side = glutCreateWindow("Side Camera");
 	init();
+	carregaGeloTextura();
 	glutDisplayFunc(display_side);
 	glutReshapeFunc(reshape);
 	glutSpecialFunc(specialKeyboard);
@@ -384,6 +415,9 @@ int main(int argc, char **argv)
 	glutInitWindowPosition(baseX + 1 * (winW + spacing), baseY + 1 * (winH + spacing));
 	window_front = glutCreateWindow("Front Camera");
 	init();
+
+	carregaGeloTextura();
+
 	glutDisplayFunc(display_front);
 	glutReshapeFunc(reshape);
 	glutSpecialFunc(specialKeyboard);

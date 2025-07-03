@@ -12,11 +12,9 @@ public:
 	float getY();
 	float getZ();
 	void desenha() const;
-	void andarFrente(float distancia);
-	void andarLateral(float distancia);
+	void mover(float delta);
 
-	void orientarPara(float dx, float dz);
-	void mover(float dx, float dz);
+	void orientar(float deltaRotaciona);
 
 	void verificarSePegouPeixe(Peixe &peixe);
 	bool temPeixePegado() const;

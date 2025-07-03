@@ -164,27 +164,15 @@ void Pinguim::desenhaCabeca() const
 	glPopMatrix();
 }
 
-void Pinguim::andarFrente(float distancia)
+void Pinguim::mover(float delta)
 {
-	x += distancia * sin(anguloY * 3.14159f / 180.0f);
-	z -= distancia * cos(anguloY * 3.14159f / 180.0f);
+	x += sin(anguloY * M_PI / 180.0) * delta;
+	z += cos(anguloY * M_PI / 180.0) * delta;
 }
 
-void Pinguim::andarLateral(float distancia)
+void Pinguim::orientar(float deltaRotaciona)
 {
-	x += distancia * cos(anguloY * 3.14159f / 180.0f);
-	z += distancia * sin(anguloY * 3.14159f / 180.0f);
-}
-
-void Pinguim::orientarPara(float dx, float dz)
-{
-	anguloY = atan2(dx, -dz) * 180.0f / 3.14159f;
-}
-
-void Pinguim::mover(float dx, float dz)
-{
-	x += dx;
-	z += dz;
+	anguloY += deltaRotaciona;
 }
 
 void Pinguim::verificarSePegouPeixe(Peixe &peixe)

@@ -236,20 +236,16 @@ void specialKeyboard(int key, int x, int y)
 	switch (key)
 	{
 	case GLUT_KEY_LEFT:
-		pinguim.orientarPara(1.0f, 0.0f);
-		pinguim.mover(0.2f, 0);
+		pinguim.orientar(4);
 		break;
 	case GLUT_KEY_RIGHT:
-		pinguim.orientarPara(-1.0f, 0.0f);
-		pinguim.mover(-0.2f, 0);
+		pinguim.orientar(-4);
 		break;
 	case GLUT_KEY_UP:
-		pinguim.orientarPara(0.0f, 1.0f);
-		pinguim.mover(0, -0.2f);
+		pinguim.mover(0.3);
 		break;
 	case GLUT_KEY_DOWN:
-		pinguim.orientarPara(0.0f, -1.0f);
-		pinguim.mover(0, 0.2f);
+		pinguim.mover(-0.3);
 		break;
 	}
 	glutPostRedisplay();

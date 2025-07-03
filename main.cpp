@@ -16,9 +16,11 @@ void reshape(int w, int h);
 void specialKeyboard(int key, int x, int y);
 void keyboard(unsigned char key, int x, int y);
 void doFrame(int value);
-void timerJogo(int value);
+void atualizarTempoJogo(int value);
 
 float alturaDoChao{ -0.8 };
+
+float TEMPO_JOGO{ 300 };
 
 GLfloat rotX, rotY;
 int INITIAL_WIDTH = 800;
@@ -244,8 +246,28 @@ void doFrame(int value)
 	glutTimerFunc(1000 / 60, doFrame, 0);
 }
 
-void timerJogo(int value)
+void atualizarTempoJogo(int value)
 {
+	filhote.diminuirTempoDeVida(1.0f);
+
+	if (filhote.verificarSeEstaVivo())
+	{
+		std::cout << "Filhote morreu!" << std::endl;
+		exit(0);
+	}
+
+	if (TEMPO_JOGO > 0)
+		TEMPO_JOGO--;
+	else
+	{
+		std::cout << "Fim de jogo!" << std::endl;
+		exit(0);
+	}
+
+	std::cout << "Tempo de jogo restante: " << TEMPO_JOGO << " segundos." << std::endl;
+
+	glutPostRedisplay();
+	glutTimerFunc(1000, atualizarTempoJogo, 0);
 }
 
 void init()
@@ -338,6 +360,7 @@ int main(int argc, char **argv)
 	srand(static_cast<unsigned int>(time(nullptr)));
 	glutTimerFunc(10000, timerPeixes, 0);
 	glutTimerFunc(5000, timerGelos, 0);
+	glutTimerFunc(1000, atualizarTempoJogo, 0);
 	glutMainLoop();
 	return 0;
 }

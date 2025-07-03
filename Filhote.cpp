@@ -22,3 +22,21 @@ Area Filhote::getArea()
 {
 	return Area(1.0f, 1.0f, 1.0f, x, y, z);
 }
+
+void Filhote::resetarTempoDeVida()
+{
+	tempoDeVida = 60.0f;
+}
+
+void Filhote::diminuirTempoDeVida(float deltaTime)
+{
+	tempoDeVida -= deltaTime;
+
+	if (tempoDeVida <= 0.0f) 
+		estaVivo = false;
+}
+
+bool Filhote::verificarSeEstaVivo() const
+{
+	return !estaVivo;
+}

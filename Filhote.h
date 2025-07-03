@@ -12,5 +12,12 @@ public:
 	void desenhar() const;
 
 	Area getArea(); 
+	void resetarTempoDeVida();
+	void diminuirTempoDeVida(float deltaTime);
+	bool verificarSeEstaVivo() const;
+
+private:
+	float tempoDeVida = 60.0f;
+	bool estaVivo = true;
 };
 

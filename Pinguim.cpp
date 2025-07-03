@@ -220,7 +220,6 @@ void Pinguim::verificarSeAlimentouFilhote(Filhote& filhote)
 	float posicaoZCabeca = z;
 	float posicaoYCabeca = y;
 
-	// Dimens0es da cabe�a
 	float larguraCabeca = 1.f;
 	float profundidadeCabeca = 1.f;
 	float alturaCabeca = 1.f;
@@ -230,7 +229,10 @@ void Pinguim::verificarSeAlimentouFilhote(Filhote& filhote)
 		posicaoXCabeca, posicaoYCabeca, posicaoZCabeca);
 
 	if (areaPinguim.colideCom(filhote.getArea()))
+	{
 		temPeixe = false;
+		filhote.resetarTempoDeVida();
+	}
 }
 
 Area Pinguim::getArea() const

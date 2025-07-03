@@ -126,6 +126,7 @@
     <ClCompile Include="Area.cpp" />
     <ClCompile Include="Cor.cpp" />
     <ClCompile Include="Filhote.cpp" />
+    <ClCompile Include="Gelo.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Peixe.cpp" />
     <ClCompile Include="Pinguim.cpp" />
@@ -134,6 +135,7 @@
     <ClInclude Include="Area.h" />
     <ClInclude Include="Cor.h" />
     <ClInclude Include="Filhote.h" />
+    <ClInclude Include="Gelo.h" />
     <ClInclude Include="Peixe.h" />
     <ClInclude Include="Pinguim.h" />
   </ItemGroup>

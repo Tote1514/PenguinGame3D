@@ -2,6 +2,7 @@
 
 #include <GL/glut.h>
 #include <math.h>
+#include <iostream>
 
 #include "Area.h"
 #include "Cor.h"
@@ -186,15 +187,13 @@ void Pinguim::mover(float dx, float dz)
 	z += dz;
 }
 
-#include <iostream>
-
 void Pinguim::verificarSePegouPeixe(Peixe &peixe)
 {
 	float posicaoXCabeca = x;
 	float posicaoZCabeca = z;
 	float posicaoYCabeca = y;
 
-	// Dimens0es da cabe�a
+	
 	float larguraCabeca = 1.f;
 	float profundidadeCabeca = 1.f;
 	float alturaCabeca = 1.f;
@@ -232,4 +231,12 @@ void Pinguim::verificarSeAlimentouFilhote(Filhote& filhote)
 
 	if (areaPinguim.colideCom(filhote.getArea()))
 		temPeixe = false;
+}
+
+Area Pinguim::getArea() const
+{
+	float largura = 1.f;
+	float profundidade = 1.f;
+	float altura = 1.f;
+	return Area(altura, largura, profundidade, x, y, z);
 }

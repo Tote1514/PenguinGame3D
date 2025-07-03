@@ -4,18 +4,30 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "Area.h"
 #include "Pinguim.h"
 #include "Cor.h"
 #include "Filhote.h"
 #include "Peixe.h"
+#include "Gelo.h"
 
 void init();
 void reshape(int w, int h);
 void specialKeyboard(int key, int x, int y);
 void keyboard(unsigned char key, int x, int y);
 void doFrame(int value);
+void timerJogo(int value);
 
 float alturaDoChao{ -0.8 };
+
+GLfloat rotX, rotY;
+int INITIAL_WIDTH = 800;
+int INITIAL_HEIGHT = 600;
+int window_top, window_side, window_front, window_free;
+std::vector<int> window_ids;
+
+Pinguim pinguim(1, 0.0f, 0.0f);
+Filhote filhote(0.0f, 0.0f, 0.0f);
 
 std::vector<Peixe> cardume = {
 		Peixe(12.0f, alturaDoChao, -2.0f, 90),
@@ -23,6 +35,14 @@ std::vector<Peixe> cardume = {
 		Peixe(8.0f, alturaDoChao, -15.0f, 90),
 		Peixe(-10.0f, alturaDoChao, 10.0f, 180),
 		Peixe(-9.0f, alturaDoChao, -4.f, 90),
+};
+
+std::vector<Gelo> gelos =
+{
+	Gelo(-10.0f, alturaDoChao, -15.0f),
+	Gelo(-10.0f, alturaDoChao, 16.0f),
+	Gelo(13.0f, alturaDoChao, -7.0f),
+	Gelo(15.0f, alturaDoChao, 10.0f)
 };
 
 void gerarPosicoesAleatoriasPeixes()
@@ -35,21 +55,29 @@ void gerarPosicoesAleatoriasPeixes()
     }
 }
 
+void gerarPosicoesAleatoriasGelos()
+{
+	for (auto &gelo : gelos)
+	{
+		float novoX = -15.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (30.0f)));
+		float novoZ = -15.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (30.0f)));
+		gelo.setNewPosition(novoX, novoZ);
+	}
+}
+
+void timerGelos(int value)
+{
+	gerarPosicoesAleatoriasGelos();
+	
+	glutTimerFunc(5000, timerGelos, 0);
+}
+
 void timerPeixes(int value)
 {
     gerarPosicoesAleatoriasPeixes();
     
     glutTimerFunc(10000, timerPeixes, 0);
 }
-
-GLfloat rotX, rotY;
-int INITIAL_WIDTH = 800;
-int INITIAL_HEIGHT = 600;
-int window_top, window_side, window_front, window_free;
-std::vector<int> window_ids;
-
-Pinguim pinguim( 1, 0.0f, 0.0f);
-Filhote filhote( 0.0f, 0.0f, 0.0f);
 
 void drawScene()
 {
@@ -71,6 +99,10 @@ void drawScene()
 
 	for (auto &peixe : cardume)
 		peixe.desenha();
+
+	for (auto& gelo : gelos)
+		gelo.desenha();
+
 
 	glutSwapBuffers();
 }
@@ -185,6 +217,21 @@ void doFrame(int value)
 			pinguim.verificarSePegouPeixe(peixe);
 	}
 
+	for (auto& gelo : gelos)
+	{
+		auto areaGelo = gelo.getArea();
+
+		if (areaGelo.colideCom(pinguim.getArea()))
+		{
+			std::cout << "Pinguim escorregou no gelo!" << std::endl;
+			std::cout << "Jogo acabou!" << std::endl;
+			std::cout << "Voce perdeu!" << std::endl;
+
+			exit(0);
+		}
+
+	}
+
 	if (pinguim.temPeixePegado())
 		pinguim.verificarSeAlimentouFilhote(filhote);
 
@@ -195,6 +242,10 @@ void doFrame(int value)
 		glutPostRedisplay();
 	}
 	glutTimerFunc(1000 / 60, doFrame, 0);
+}
+
+void timerJogo(int value)
+{
 }
 
 void init()
@@ -286,6 +337,7 @@ int main(int argc, char **argv)
 	glutTimerFunc(100, doFrame, 0);
 	srand(static_cast<unsigned int>(time(nullptr)));
 	glutTimerFunc(10000, timerPeixes, 0);
+	glutTimerFunc(5000, timerGelos, 0);
 	glutMainLoop();
 	return 0;
 }

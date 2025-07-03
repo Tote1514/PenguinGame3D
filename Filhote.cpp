@@ -3,6 +3,7 @@
 #include "Area.h"
 
 #include <GL/glut.h>
+#include "Gelo.h"
 
 Filhote::Filhote(float x, float y, float z)
 	:Pinguim(x, y, z)

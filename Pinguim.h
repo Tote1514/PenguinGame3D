@@ -1,5 +1,6 @@
 #pragma once
 
+class Area;
 class Peixe;
 class Filhote;
 
@@ -20,6 +21,8 @@ public:
 	void verificarSePegouPeixe(Peixe &peixe);
 	bool temPeixePegado() const;
 	void verificarSeAlimentouFilhote(Filhote& filhote);
+
+	Area getArea() const;
 
 private:
 	void desenhaCorpo() const;
